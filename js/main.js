@@ -17,6 +17,7 @@ const params = {
 
 const assets = [
     'Look Over Shoulder',
+    'Walk Strafe Left'
 ];
 
 init();
