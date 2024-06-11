@@ -19,7 +19,6 @@ const assets = [
     'Look Over Shoulder',
 ];
 
-
 init();
 
 function init() {
@@ -31,14 +30,13 @@ function init() {
     camera.position.set(100, 200, 300);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xa0a0a0);
-    scene.fog = new THREE.Fog(0xa0a0a0, 200, 1000);
+    scene.background = new THREE.Color(0x000000);  // Color de fondo negro
+    scene.fog = new THREE.Fog(0x000000, 200, 1000);  // Fog de color negro
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 5);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0);  // Desactivar luz ambiental
     hemiLight.position.set(0, 200, 0);
     scene.add(hemiLight);
 
-    // Crear la luz direccional
     const dirLight = new THREE.DirectionalLight(0xffffff, 10);
     dirLight.position.set(0, 200, 100);
     dirLight.castShadow = true;
@@ -48,30 +46,22 @@ function init() {
     dirLight.shadow.camera.right = 120;
     scene.add(dirLight);
 
-    // Función para hacer parpadear la luz
     function flickerLight() {
-        // Cambiar la intensidad de la luz aleatoriamente
-        const intensity = Math.random() * 5; // Puedes ajustar el rango de intensidad si es necesario
+        const intensity = Math.random() * 30;
         dirLight.intensity = intensity;
 
-        // Cambiar el tiempo de parpadeo aleatoriamente
-        const flickerInterval = Math.random() * 500; // Entre 0 y 500 ms para un parpadeo más realista
+        const flickerInterval = Math.random() * 500;
         setTimeout(flickerLight, flickerInterval);
     }
 
-    // Iniciar el parpadeo
     flickerLight();
 
-
-    // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
-
-    // ground
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x000000, depthWrite: false }));  // Suelo de color negro
     mesh.rotation.x = - Math.PI / 2;
     mesh.receiveShadow = true;
     scene.add(mesh);
 
-    const grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
+    const grid = new THREE.GridHelper(2000, 20, 0xffffff, 0xffffff);  // Grid de color blanco
     grid.material.opacity = 0.2;
     grid.material.transparent = true;
     scene.add(grid);
@@ -92,107 +82,68 @@ function init() {
 
     window.addEventListener('resize', onWindowResize);
 
-    // stats
     stats = new Stats();
     container.appendChild(stats.dom);
 
     const gui = new GUI();
     gui.add(params, 'asset', assets).onChange(function (value) {
-
         loadAsset(value);
-
     });
 
     guiMorphsFolder = gui.addFolder('Morphs').hide();
-
 }
 
 function loadAsset(asset) {
-
     loader.load('models/fbx/' + asset + '.fbx', function (group) {
-
         if (object) {
-
             object.traverse(function (child) {
-
                 if (child.material) child.material.dispose();
                 if (child.material && child.material.map) child.material.map.dispose();
                 if (child.geometry) child.geometry.dispose();
-
             });
-
             scene.remove(object);
-
         }
-
-        //
 
         object = group;
 
         if (object.animations && object.animations.length) {
-
             mixer = new THREE.AnimationMixer(object);
-
             const action = mixer.clipAction(object.animations[0]);
             action.play();
-
         } else {
-
             mixer = null;
-
         }
 
         guiMorphsFolder.children.forEach((child) => child.destroy());
         guiMorphsFolder.hide();
 
         object.traverse(function (child) {
-
             if (child.isMesh) {
-
                 child.castShadow = true;
                 child.receiveShadow = true;
-
                 if (child.morphTargetDictionary) {
-
                     guiMorphsFolder.show();
                     const meshFolder = guiMorphsFolder.addFolder(child.name || child.uuid);
                     Object.keys(child.morphTargetDictionary).forEach((key) => {
-
                         meshFolder.add(child.morphTargetInfluences, child.morphTargetDictionary[key], 0, 1, 0.01);
-
                     });
-
                 }
-
             }
-
         });
 
         scene.add(object);
-
     });
-
 }
 
 function onWindowResize() {
-
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-
     renderer.setSize(window.innerWidth, window.innerHeight);
-
 }
 
-//
-
 function animate() {
-
     const delta = clock.getDelta();
-
     if (mixer) mixer.update(delta);
-
     renderer.render(scene, camera);
-
     stats.update();
-
 }
